@@ -1,3 +1,4 @@
+
 // This is a placeholder for the actual mosaic processing logic
 // In a real implementation, we would port the Python code to JavaScript/TypeScript
 // For now, we'll simulate the processing
@@ -49,15 +50,13 @@ export const processMosaic = (
     }
     
     // In a real implementation, this would actually process the image
-    // For now, we'll just return the original image after a delay
     setTimeout(() => {
-      const timestamp = Date.now();
-      
-      // In this simulation, we'll directly use placeholder.svg which we know exists
-      // This guarantees we'll have an image to display
+      // Ensure we always return a valid image URL that won't fail to load
+      // We're using placeholder.svg which we know exists in the project
       resolve({
-        mosaicImageUrl: '/placeholder.svg',
-        outlineImageUrl: '/placeholder.svg'
+        // Add a timestamp to prevent caching issues
+        mosaicImageUrl: `/placeholder.svg?t=${Date.now()}`,
+        outlineImageUrl: `/placeholder.svg?t=${Date.now() + 1}`
       });
     }, 2000); // Simulate processing time
   });
