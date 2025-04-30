@@ -33,13 +33,29 @@ export const processMosaic = (
     // In a real implementation, this would actually process the image
     // For now, we'll just return the original image after a delay
     setTimeout(() => {
-      // Simulate processing by slightly modifying the original URL
-      // In a real implementation, we would process the image and return new URLs
       const timestamp = Date.now();
-      resolve({
-        mosaicImageUrl: originalImageUrl + `?mosaic=${timestamp}`,
-        outlineImageUrl: originalImageUrl + `?outline=${timestamp}`
-      });
+      
+      // Create new Image objects to verify the URLs are valid
+      const testOriginalImage = new Image();
+      testOriginalImage.onload = () => {
+        // URLs are valid, resolve with them
+        resolve({
+          mosaicImageUrl: `${originalImageUrl}?mosaic=${timestamp}`,
+          outlineImageUrl: `${originalImageUrl}?outline=${timestamp}`
+        });
+      };
+      
+      testOriginalImage.onerror = () => {
+        console.error('Failed to load original image, using fallback');
+        // If original image fails to load, use a placeholder
+        resolve({
+          mosaicImageUrl: '/placeholder.svg',
+          outlineImageUrl: '/placeholder.svg'
+        });
+      };
+      
+      // Test if the URL is valid
+      testOriginalImage.src = originalImageUrl;
     }, 2000); // Simulate processing time
   });
 };
