@@ -28,7 +28,9 @@ const ImagePreview: React.FC<ImagePreviewProps> = ({ imageUrl, isProcessing, tit
             onError={(e) => {
               console.error(`Failed to load image: ${imageUrl}`);
               e.currentTarget.style.display = 'none';
-              e.currentTarget.nextSibling && (e.currentTarget.nextSibling as HTMLElement).style.display = 'flex';
+              if (e.currentTarget.nextSibling) {
+                (e.currentTarget.nextSibling as HTMLElement).style.display = 'flex';
+              }
             }}
           />
         ) : (
