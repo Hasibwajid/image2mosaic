@@ -19,16 +19,35 @@ export interface MosaicResult {
   outlineImageUrl: string;
 }
 
+// Helper function to check if a URL is valid
+const isValidUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    if (url.startsWith('/') || url.startsWith('data:')) {
+      return true; // Local paths or data URLs
+    }
+    return false;
+  }
+};
+
 // Simulated processing function
 export const processMosaic = (
   originalImageUrl: string,
   manualLinesUrl: string | null,
   parameters: MosaicParameters
 ): Promise<MosaicResult> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     console.log('Processing mosaic with parameters:', parameters);
     console.log('Original image:', originalImageUrl);
     console.log('Manual lines:', manualLinesUrl);
+    
+    if (!originalImageUrl || !isValidUrl(originalImageUrl)) {
+      console.error('Invalid original image URL');
+      reject(new Error('Invalid original image URL'));
+      return;
+    }
     
     // In a real implementation, this would actually process the image
     // For now, we'll just return the original image after a delay
@@ -37,6 +56,7 @@ export const processMosaic = (
       
       // Create new Image objects to verify the URLs are valid
       const testOriginalImage = new Image();
+      
       testOriginalImage.onload = () => {
         // URLs are valid, resolve with them
         resolve({
@@ -46,7 +66,7 @@ export const processMosaic = (
       };
       
       testOriginalImage.onerror = () => {
-        console.error('Failed to load original image, using fallback');
+        console.error('Failed to load original image, using placeholder');
         // If original image fails to load, use a placeholder
         resolve({
           mosaicImageUrl: '/placeholder.svg',
