@@ -28,7 +28,7 @@ const NotFound: React.FC = () => {
         <Button asChild size="lg">
           <a href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Return to Mosaic Generator
+            Return to Image2Mosaic
           </a>
         </Button>
       </div>

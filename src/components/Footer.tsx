@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
     <footer className="bg-background border-t py-4 px-6">
       <div className="container mx-auto flex justify-between items-center">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Mosaic Generator
+          © {new Date().getFullYear()} Image2Mosaic
         </p>
         <p className="text-sm text-muted-foreground">
           Created for laser cutting projects
