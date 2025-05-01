@@ -1,73 +1,50 @@
-# Welcome to your Lovable project
+# Mosaic Tiling & Laser-Cutting Path Generator
 
-## Project info
+An AI-powered tool that converts images into soft-edged, closed, monochromatic mosaic tiles optimized for laser cutting. It detects subject outlines, respects transparent and empty areas, and generates an adjustable path layer for precise control. Manual overrides via mask import or direct drawing are also supported.
 
-**URL**: https://lovable.dev/projects/efba674e-e784-42d4-a288-f42f05044728
+## 🚀 Features
 
-## How can I edit this code?
+- ✅ Intelligent tiling that follows image contours  
+- ✅ Smooth, closed, and monochromatic tile generation  
+- ✅ Transparent and empty area recognition  
+- ✅ Adjustable outline/path thickness  
+- ✅ Manual control via mask import or in-app drawing  
+- ✅ Exportable laser cutting path  
 
-There are several ways of editing your application.
+## 🧠 Tech Stack
 
-**Use Lovable**
+- Vite  
+- React  
+- TypeScript  
+- Tailwind CSS  
+- shadcn/ui  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/efba674e-e784-42d4-a288-f42f05044728) and start prompting.
+## 🛠️ Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+To run the project locally:
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
+# 1. Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# 2. Navigate into the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📦 Build for Production
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+```
 
-**Use GitHub Codespaces**
+You can deploy the build folder to any static hosting provider like Vercel, Netlify, or GitHub Pages.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📄 License
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/efba674e-e784-42d4-a288-f42f05044728) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This project is open-source and available under the [MIT License](LICENSE).
