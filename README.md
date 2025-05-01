@@ -2,6 +2,13 @@
 
 An AI-powered tool that converts images into soft-edged, closed, monochromatic mosaic tiles optimized for laser cutting. It detects subject outlines, respects transparent and empty areas, and generates an adjustable path layer for precise control. Manual overrides via mask import or direct drawing are also supported.
 
+
+
+![image](https://github.com/user-attachments/assets/45b0e95d-224e-427f-af41-ebc10f973186)
+
+
+
+
 ## 🚀 Features
 
 - ✅ Intelligent tiling that follows image contours  
