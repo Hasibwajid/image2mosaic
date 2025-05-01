@@ -1,8 +1,3 @@
-
-// This is a placeholder for the actual mosaic processing logic
-// In a real implementation, we would port the Python code to JavaScript/TypeScript
-// For now, we'll simulate the processing
-
 export interface MosaicParameters {
   tileSize: number;
   compactness: number;
@@ -19,45 +14,47 @@ export interface MosaicResult {
   outlineImageUrl: string;
 }
 
-// Helper function to check if a URL is valid
-const isValidUrl = (url: string): boolean => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    if (url.startsWith('/') || url.startsWith('data:')) {
-      return true; // Local paths or data URLs
-    }
-    return false;
-  }
-};
-
-// Simulated processing function
-export const processMosaic = (
+export const processMosaic = async (
   originalImageUrl: string,
   manualLinesUrl: string | null,
   parameters: MosaicParameters
 ): Promise<MosaicResult> => {
-  return new Promise((resolve, reject) => {
-    console.log('Processing mosaic with parameters:', parameters);
-    console.log('Original image:', originalImageUrl);
-    console.log('Manual lines:', manualLinesUrl);
-    
-    if (!originalImageUrl || !isValidUrl(originalImageUrl)) {
-      console.error('Invalid original image URL');
-      reject(new Error('Invalid original image URL'));
-      return;
-    }
-    
-    // In a real implementation, this would actually process the image
-    setTimeout(() => {
-      // Ensure we always return a valid image URL that won't fail to load
-      // We're using placeholder.svg which we know exists in the project
-      resolve({
-        // Add a timestamp to prevent caching issues
-        mosaicImageUrl: `/placeholder.svg?t=${Date.now()}`,
-        outlineImageUrl: `/placeholder.svg?t=${Date.now() + 1}`
-      });
-    }, 2000); // Simulate processing time
+  const formData = new FormData();
+  
+  // Convert image URLs to blobs
+  const originalImageBlob = await (await fetch(originalImageUrl)).blob();
+  formData.append('image', originalImageBlob, 'image.png');
+  
+  if (manualLinesUrl) {
+    const manualLinesBlob = await (await fetch(manualLinesUrl)).blob();
+    formData.append('manual_lines', manualLinesBlob, 'lines.png');
+  }
+  
+  // Append parameters
+  formData.append('tile_size', parameters.tileSize.toString());
+  formData.append('compactness', parameters.compactness.toString());
+  formData.append('outline_thickness', parameters.outlineThickness.toString());
+  formData.append('stroke_width', parameters.strokeWidth.toString());
+  formData.append('line_threshold', parameters.lineThreshold.toString());
+  formData.append('smoothing_sigma', parameters.smoothingSigma.toString());
+  formData.append('gradient_sensitivity', parameters.gradientSensitivity.toString());
+  formData.append('preserve_colors', parameters.preserveColors.toString());
+  
+  const response = await fetch('http://localhost:8000/process_mosaic', {
+    method: 'POST',
+    body: formData,
   });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to process mosaic');
+  }
+  
+  const data = await response.json();
+  
+  // Convert base64 to data URLs
+  const mosaicImageUrl = `data:image/png;base64,${data.mosaic}`;
+  const outlineImageUrl = `data:image/png;base64,${data.outlines}`;
+  
+  return { mosaicImageUrl, outlineImageUrl };
 };

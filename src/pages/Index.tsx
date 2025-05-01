@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -34,7 +33,7 @@ const Index: React.FC = () => {
     tileSize: 20,
     compactness: 10,
     outlineThickness: 1,
-    strokeWidth: 1,
+    strokeWidth: 0,
     lineThreshold: 50,
     smoothingSigma: 0,
     gradientSensitivity: 20,
@@ -54,8 +53,6 @@ const Index: React.FC = () => {
   const handleImageUpload = (file: File, imageUrl: string) => {
     setOriginalImage(file);
     setOriginalImageUrl(imageUrl);
-    
-    // Reset results when a new image is uploaded
     setMosaicResult(null);
   };
   
@@ -84,14 +81,8 @@ const Index: React.FC = () => {
     setIsProcessing(true);
     
     try {
-      // Use drawn lines if available, otherwise use uploaded manual lines
       const linesUrl = drawnLinesImageUrl || manualLinesImageUrl;
-      
-      const result = await processMosaic(
-        originalImageUrl,
-        linesUrl,
-        parameters
-      );
+      const result = await processMosaic(originalImageUrl, linesUrl, parameters);
       
       setMosaicResult(result);
       toast({
@@ -125,7 +116,6 @@ const Index: React.FC = () => {
       
       <main className="flex-1 container py-8 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column - Controls */}
           <div className="lg:col-span-4 space-y-6">
             <Card className="overflow-hidden">
               <Tabs defaultValue="upload" value={activeTab} onValueChange={setActiveTab}>
@@ -169,7 +159,7 @@ const Index: React.FC = () => {
                     <div className="space-y-4">
                       <Label>Draw Manual Lines</Label>
                       <p className="text-sm text-muted-foreground">
-                        Draw lines to guide the mosaic pattern. Areas with lines will be preserved as outlines.
+                        Draw lines to guide the mosaic pattern.
                       </p>
                       <div className="flex justify-center">
                         <Canvas 
@@ -192,9 +182,8 @@ const Index: React.FC = () => {
                       min={5}
                       max={100}
                       step={1}
-                      tooltip="Controls the size of mosaic tiles. Smaller values create more detailed mosaics."
+                      tooltip="Controls the size of mosaic tiles."
                     />
-                    
                     <ParameterSlider
                       label="Compactness"
                       value={parameters.compactness}
@@ -202,9 +191,8 @@ const Index: React.FC = () => {
                       min={1}
                       max={100}
                       step={1}
-                      tooltip="Controls the shape regularity of tiles. Higher values create more evenly shaped tiles."
+                      tooltip="Controls tile shape regularity."
                     />
-                    
                     <ParameterSlider
                       label="Outline Thickness"
                       value={parameters.outlineThickness}
@@ -212,19 +200,17 @@ const Index: React.FC = () => {
                       min={0.1}
                       max={5.0}
                       step={0.1}
-                      tooltip="Controls the thickness of tile outlines for laser cutting."
+                      tooltip="Controls outline thickness."
                     />
-                    
                     <ParameterSlider
                       label="Stroke Width"
                       value={parameters.strokeWidth}
                       onChange={(value) => handleParameterChange('strokeWidth', value)}
-                      min={1}
+                      min={0}
                       max={5}
                       step={1}
-                      tooltip="Controls the thickness of detected edges and manual lines."
+                      tooltip="Controls edge thickness."
                     />
-                    
                     <ParameterSlider
                       label="Line Threshold"
                       value={parameters.lineThreshold}
@@ -232,9 +218,8 @@ const Index: React.FC = () => {
                       min={10}
                       max={200}
                       step={5}
-                      tooltip="Controls the sensitivity of line detection. Lower values detect more lines."
+                      tooltip="Controls line detection sensitivity."
                     />
-                    
                     <ParameterSlider
                       label="Edge Smoothing"
                       value={parameters.smoothingSigma}
@@ -242,9 +227,8 @@ const Index: React.FC = () => {
                       min={0}
                       max={5}
                       step={0.1}
-                      tooltip="Applies smoothing to edges. Higher values create smoother outlines."
+                      tooltip="Smooths edges."
                     />
-                    
                     <ParameterSlider
                       label="Gradient Sensitivity"
                       value={parameters.gradientSensitivity}
@@ -252,17 +236,17 @@ const Index: React.FC = () => {
                       min={5}
                       max={50}
                       step={1}
-                      tooltip="Controls sensitivity to color gradients. Lower values are more sensitive."
+                      tooltip="Controls gradient sensitivity."
                     />
-                    
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="preserve-colors">Preserve Original Colors</Label>
+                      <Label htmlFor="preserve-colors">Preserve Colors</Label>
                       <Switch 
                         id="preserve-colors"
                         checked={parameters.preserveColors}
                         onCheckedChange={(checked) => handleParameterChange('preserveColors', checked)}
                       />
                     </div>
+                    
                   </TabsContent>
                 </CardContent>
               </Tabs>
@@ -289,39 +273,30 @@ const Index: React.FC = () => {
             </div>
           </div>
           
-          {/* Right Column - Previews */}
           <div className="lg:col-span-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Original Image Preview */}
               <ImagePreview 
                 imageUrl={originalImageUrl} 
                 isProcessing={false}
                 title="Original Image" 
               />
-              
-              {/* Manual Lines Preview */}
               <ImagePreview 
                 imageUrl={drawnLinesImageUrl || manualLinesImageUrl} 
                 isProcessing={false}
                 title="Manual Lines" 
               />
-              
-              {/* Mosaic Preview */}
               <ImagePreview 
                 imageUrl={mosaicResult?.mosaicImageUrl || null} 
                 isProcessing={isProcessing}
                 title="Generated Mosaic" 
               />
-              
-              {/* Outlines Preview */}
               <ImagePreview 
                 imageUrl={mosaicResult?.outlineImageUrl || null} 
                 isProcessing={isProcessing}
-                title="Outlines for Laser Cutting" 
+                title="Outlines" 
               />
             </div>
             
-            {/* Download Buttons */}
             {mosaicResult && (
               <div className="flex flex-wrap gap-4 justify-center">
                 <Button
