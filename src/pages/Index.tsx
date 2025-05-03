@@ -32,7 +32,7 @@ const Index: React.FC = () => {
   const [parameters, setParameters] = useState<MosaicParameters>({
     tileSize: 20,
     compactness: 10,
-    outlineThickness: 1,
+    outlineThickness: 0,
     strokeWidth: 0,
     lineThreshold: 50,
     smoothingSigma: 0,
@@ -188,7 +188,7 @@ const Index: React.FC = () => {
                       label="Compactness"
                       value={parameters.compactness}
                       onChange={(value) => handleParameterChange('compactness', value)}
-                      min={1}
+                      min={-20}
                       max={100}
                       step={1}
                       tooltip="Controls tile shape regularity."
@@ -197,7 +197,7 @@ const Index: React.FC = () => {
                       label="Outline Thickness"
                       value={parameters.outlineThickness}
                       onChange={(value) => handleParameterChange('outlineThickness', value)}
-                      min={0.1}
+                      min={-20}
                       max={5.0}
                       step={0.1}
                       tooltip="Controls outline thickness."
@@ -206,8 +206,8 @@ const Index: React.FC = () => {
                       label="Stroke Width"
                       value={parameters.strokeWidth}
                       onChange={(value) => handleParameterChange('strokeWidth', value)}
-                      min={0}
-                      max={5}
+                      min={-20}
+                      max={5.0}
                       step={1}
                       tooltip="Controls edge thickness."
                     />
@@ -215,8 +215,8 @@ const Index: React.FC = () => {
                       label="Line Threshold"
                       value={parameters.lineThreshold}
                       onChange={(value) => handleParameterChange('lineThreshold', value)}
-                      min={10}
-                      max={200}
+                      min={-20}
+                      max={100}
                       step={5}
                       tooltip="Controls line detection sensitivity."
                     />
@@ -224,7 +224,7 @@ const Index: React.FC = () => {
                       label="Edge Smoothing"
                       value={parameters.smoothingSigma}
                       onChange={(value) => handleParameterChange('smoothingSigma', value)}
-                      min={0}
+                      min={-20}
                       max={5}
                       step={0.1}
                       tooltip="Smooths edges."
@@ -233,8 +233,8 @@ const Index: React.FC = () => {
                       label="Gradient Sensitivity"
                       value={parameters.gradientSensitivity}
                       onChange={(value) => handleParameterChange('gradientSensitivity', value)}
-                      min={5}
-                      max={50}
+                      min={0}
+                      max={100}
                       step={1}
                       tooltip="Controls gradient sensitivity."
                     />

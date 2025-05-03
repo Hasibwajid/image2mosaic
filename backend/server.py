@@ -5,19 +5,19 @@ import numpy as np
 from skimage.segmentation import slic, find_boundaries
 from skimage.measure import label
 from skimage.color import rgb2lab
-from skimage.filters import gaussian
+from skimage.filters import gaussian, sobel
+from skimage.morphology import binary_closing, disk
 import base64
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://image2mosaic.vercel.app", "http://localhost:8080"],  # Your frontend’s origin
+    allow_origins=["https://image2mosaic.vercel.app", "http://localhost:8080"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 def detect_main_lines(image, mask, manual_lines_image, stroke_width, gradient_sensitivity, smoothing_sigma):
@@ -27,7 +27,7 @@ def detect_main_lines(image, mask, manual_lines_image, stroke_width, gradient_se
         kernel = np.ones((3, 3), np.uint8)
         dilated_lines = cv2.dilate(binary_lines, kernel, iterations=stroke_width)
         return dilated_lines * mask.astype(np.uint8)
-    
+
     lab = cv2.cvtColor(image[:, :, :3], cv2.COLOR_BGR2LAB)
     l_channel = lab[:, :, 0]
     blurred = cv2.GaussianBlur(l_channel, (5, 5), 0)
@@ -40,51 +40,104 @@ def detect_main_lines(image, mask, manual_lines_image, stroke_width, gradient_se
         dilated_edges = (dilated_edges > 0.1).astype(np.uint8) * 255
     return dilated_edges
 
-def generate_tiles(image, mask, main_lines, tile_size, compactness, preserve_colors, smoothing_sigma):
-    num_segments = int((np.sum(mask) / (tile_size ** 2)))
-    num_segments = max(num_segments, 10)
-    rgb_image = cv2.cvtColor(image[:, :, :3], cv2.COLOR_BGR2RGB)
-    labels = slic(rgb_image, n_segments=num_segments, compactness=compactness, mask=mask, 
-                  start_label=1, sigma=smoothing_sigma, enforce_connectivity=True)
+def segment_features(image, mask, smoothing_sigma):
+    """Segment the image into distinct features based on color and gradient"""
+    # Convert to LAB color space for better color differentiation
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
     
-    main_lines_bin = (main_lines > 0) & mask
-    new_label = np.max(labels) + 1
+    # Calculate gradient magnitude
+    gradient = sobel(lab[:, :, 0])  # Use lightness channel for gradient
     
-    for label_val in np.unique(labels):
-        if label_val == 0:
+    # Combine color and gradient information
+    features = np.zeros_like(lab[:, :, 0], dtype=np.float32)
+    for i in range(3):
+        features += gaussian(lab[:, :, i], sigma=smoothing_sigma) * (0.3 if i == 0 else 0.35)
+    features += gaussian(gradient, sigma=smoothing_sigma) * 0.3
+    
+    # Normalize and quantize
+    features = (features - features.min()) / (features.max() - features.min())
+    quantized = np.digitize(features, bins=np.linspace(0, 1, 8))
+    
+    # Clean up the segmentation
+    quantized = quantized * mask
+    for val in np.unique(quantized):
+        if val == 0:
             continue
-        label_mask = (labels == label_val)
-        intersection = label_mask & main_lines_bin
-        if np.sum(intersection) > 5:
-            temp_mask = label_mask & ~main_lines_bin
-            component_labels, num_components = label(temp_mask, return_num=True, connectivity=1)
-            if num_components > 1:
-                for component in range(1, num_components + 1):
-                    component_mask = (component_labels == component)
-                    if np.sum(component_mask) > 10:
-                        labels[component_mask] = new_label
-                        new_label += 1
+        component_mask = (quantized == val)
+        # Remove small regions
+        if np.sum(component_mask) < 100:
+            quantized[component_mask] = 0
     
+    # Apply morphological closing to smooth boundaries
+    closed = binary_closing(quantized > 0, disk(3))
+    quantized = label(closed) + 1
+    quantized = quantized * mask
+    
+    return quantized
+
+def generate_tiles(image, mask, main_lines, tile_size, compactness, preserve_colors, smoothing_sigma):
+    # First segment the image into distinct features
+    feature_mask = segment_features(image[:, :, :3], mask, smoothing_sigma)
+    
+    # Generate tiles for each feature separately
     mosaic = np.zeros_like(image)
-    if preserve_colors:
-        for label_val in np.unique(labels):
-            if label_val == 0:
-                continue
-            label_mask = (labels == label_val)
-            mosaic[label_mask] = image[label_mask]
-    else:
-        for label_val in np.unique(labels):
-            if label_val == 0:
-                continue
-            label_mask = (labels == label_val)
-            if np.any(label_mask):
-                mean_color = np.mean(image[label_mask], axis=0).astype(np.uint8)
-                mosaic[label_mask] = mean_color
-    
-    boundaries = find_boundaries(labels, mode='thick')
     outlines = np.zeros(image.shape[:2], dtype=np.uint8)
-    combined_boundaries = boundaries | main_lines_bin
-    outlines[combined_boundaries] = 255
+    
+    for feature_id in np.unique(feature_mask):
+        if feature_id == 0:
+            continue
+            
+        feature_region = (feature_mask == feature_id)
+        
+        # Estimate number of segments for this feature based on its area
+        feature_area = np.sum(feature_region)
+        num_segments = max(10, int(feature_area / (tile_size ** 2)))
+        
+        # Apply SLIC only within this feature
+        rgb_image = cv2.cvtColor(image[:, :, :3], cv2.COLOR_BGR2RGB)
+        labels = slic(
+            rgb_image,
+            n_segments=num_segments,
+            compactness=compactness * 2,  # Higher compactness for more regular shapes
+            mask=feature_region,
+            start_label=1,
+            sigma=smoothing_sigma,
+            enforce_connectivity=True,
+            slic_zero=True  # Improved SLIC algorithm
+        )
+        
+        # Adjust labels to be unique across all features
+        labels = labels + (feature_id * 1000)
+        
+        # Generate mosaic for this feature
+        if preserve_colors:
+            for label_val in np.unique(labels):
+                if label_val == 0:
+                    continue
+                label_mask = (labels == label_val)
+                mosaic[label_mask] = image[label_mask]
+        else:
+            for label_val in np.unique(labels):
+                if label_val == 0:
+                    continue
+                label_mask = (labels == label_val)
+                if np.any(label_mask):
+                    mean_color = np.mean(image[label_mask], axis=0).astype(np.uint8)
+                    mosaic[label_mask] = mean_color
+        
+        # Generate boundaries for this feature
+        feature_boundaries = find_boundaries(labels, mode='thick')
+        outlines[feature_boundaries] = 255
+    
+    # Combine with main lines
+    main_lines_bin = (main_lines > 0) & mask
+    outlines[main_lines_bin] = 255
+    
+    # Smooth the outlines
+    if smoothing_sigma > 0:
+        outlines = gaussian(outlines, sigma=smoothing_sigma)
+        outlines = (outlines > 0.5).astype(np.uint8) * 255
+    
     return mosaic, outlines
 
 @app.post("/process_mosaic")
@@ -96,7 +149,7 @@ async def process_mosaic(
     outline_thickness: float = Form(1.0),
     stroke_width: int = Form(0),
     line_threshold: int = Form(50),
-    smoothing_sigma: float = Form(0.0),
+    smoothing_sigma: float = Form(1.0),  # Default increased for better smoothing
     gradient_sensitivity: int = Form(20),
     preserve_colors: bool = Form(True)
 ):
@@ -105,7 +158,7 @@ async def process_mosaic(
         image_data = await image.read()
         nparr = np.frombuffer(image_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
-        
+
         # Read manual lines if provided
         manual_lines_img = None
         if manual_lines:
